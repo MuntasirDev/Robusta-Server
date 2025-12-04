@@ -1,7 +1,7 @@
 const express = require( 'express');
  const cors = require('cors');
  require('dotenv').config();
- const { MongoClient, ServerApiVersion } = require('mongodb');
+ const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
  const app = express ();
  const port = process.env.PORT || 3000;
 
@@ -29,19 +29,54 @@ async function run() {
     await client.connect();
 
     const coffeesCollection = client.db('cofeeDB').collection('coffees')
-
+// sorting data to array for ease
  app.get('/coffees',async(req,res) =>
 {
     const cursor = coffeesCollection.find();
     const result = await cursor.toArray();
     res.send(result);
 })
+// read opp
+app.get('/coffees/:id',async(req,res) =>
+    {
+        const id = req.params.id;
+        const query = {_id: new ObjectId(id)}
+        const result = await coffeesCollection.findOne(query);
+        res.send(result);
+
+    })
+
+    // data sending from ui to here to db
     app.post('/coffees', async (req,res)=>
 {
     const newCoffe = req.body;
     console.log(newCoffe);
     const result = await coffeesCollection.insertOne(newCoffe);
     res.send(result);
+})
+
+app.put('/coffees/:id', async (req,res) =>
+{
+    const id = req.params.id;
+    const filter = {_id: new ObjectId(id)};
+    const options = {upsert: true}
+    ;
+    const uspdatedCoffee = req.body;
+    const updatedDoc = {
+        $set:uspdatedCoffee
+    }
+    const result = await coffeesCollection.updateOne(filter,updatedDoc,options);
+    res.send(result);
+
+})
+//delete op
+app.delete('/coffees/:id',async(req,res)=>
+{
+ const id = req.params.id;
+ const query = {_id: new ObjectId(id)}
+ const result = await coffeesCollection.deleteOne(query);
+ res.send(result);
+
 })
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
